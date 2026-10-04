@@ -44,15 +44,33 @@ export class InfiniteBlock extends BeanStub<RowNodeBlockEvent> {
         // in case any current loads in progress, this will have their results ignored
         this.version++;
         this.state = 'needsLoading';
+        this.setFailedLoad(false);
     }
 
     private pageLoadFailed(version: number) {
         const requestMostRecentAndLive = this.isRequestMostRecentAndLive(version);
         if (requestMostRecentAndLive) {
             this.state = 'failed';
+            this.setFailedLoad(true);
         }
 
         this.dispatchLocalEvent({ type: 'loadComplete' });
+    }
+
+    /** Marks the stub rows of this block as failed (or loading again), redrawing them to match. */
+    private setFailedLoad(failed: boolean): void {
+        const changed: RowNode[] = [];
+        for (const rowNode of this.rowNodes) {
+            if (!rowNode.stub || !!rowNode.failedLoad === failed) {
+                continue;
+            }
+            rowNode.failedLoad = failed;
+            changed.push(rowNode);
+        }
+        if (!changed.length) {
+            return;
+        }
+        this.beans.rowRenderer.redrawRows(changed);
     }
 
     private pageLoaded(version: number, rows: any[], lastRow: number) {
@@ -89,7 +107,7 @@ export class InfiniteBlock extends BeanStub<RowNodeBlockEvent> {
         // creates empty row nodes, data is missing as not loaded yet
         this.rowNodes = [];
         const {
-            params: { blockSize, rowHeight },
+            params: { blockSize, rowHeight, stubLoadingRows },
             startRow,
             beans,
             rowNodes,
@@ -101,6 +119,7 @@ export class InfiniteBlock extends BeanStub<RowNodeBlockEvent> {
 
             rowNode.setRowHeight(rowHeight);
             rowNode.uiLevel = 0;
+            rowNode.stub = stubLoadingRows;
             rowNode.setRowIndex(rowIndex);
             rowNode.setRowTop(rowHeight * rowIndex);
 
@@ -122,6 +141,8 @@ export class InfiniteBlock extends BeanStub<RowNodeBlockEvent> {
     }
 
     private setDataAndId(rowNode: RowNode, data: any, index: number): void {
+        // a row stays a loading row only while the server has not supplied its data
+        rowNode.stub = this.params.stubLoadingRows && data == null;
         if (_exists(data)) {
             // this means if the user is not providing id's we just use the
             // index for the row. this will allow selection to work (that is based
@@ -200,10 +221,12 @@ export class InfiniteBlock extends BeanStub<RowNodeBlockEvent> {
                 // if the node had no id and was rendered, but we have data for it now, then
                 // destroy the old row and copy its position into new row. This prevents an additional
                 // set of events being fired as the row renderer tries to understand the changing id
-                rowNodes[index] = new RowNode(beans);
-                rowNodes[index].setRowIndex(rowNode.rowIndex);
-                rowNodes[index].setRowTop(rowNode.rowTop);
-                rowNodes[index].setRowHeight(rowNode.rowHeight);
+                const newNode = new RowNode(beans);
+                rowNodes[index] = newNode;
+                newNode.uiLevel = rowNode.uiLevel;
+                newNode.setRowIndex(rowNode.rowIndex);
+                newNode.setRowTop(rowNode.rowTop);
+                newNode.setRowHeight(rowNode.rowHeight);
 
                 // clean up the old row
                 rowNode._destroy(true);

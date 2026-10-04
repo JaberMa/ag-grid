@@ -136,7 +136,7 @@ export const ICON_MODULES: Record<IconName, ValidationModuleName | ValidationMod
     close: 'EnterpriseCore',
     check: 'MenuItem',
     colorPicker: 'CommunityCore',
-    groupLoading: 'LoadingCellRenderer',
+    groupLoading: ['LoadingCellRenderer', 'ServerSidePagination'],
     overlayLoading: 'Overlay',
     overlayExporting: 'Overlay',
     menuAlt: 'ColumnHeaderComp',

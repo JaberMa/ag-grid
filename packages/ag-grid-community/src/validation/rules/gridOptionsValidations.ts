@@ -168,9 +168,9 @@ export const GRID_OPTIONS_MODULES: Partial<Record<keyof GridOptions, RequiredMod
     rowGroupPanelShow: 'RowGroupingPanel',
     rowNumbers: 'RowNumbers',
     rowSelection: (_options, gridOptions) =>
-        gridOptions.rowModelType === 'serverSide' ? 'ServerSideRowModel' : 'RowSelection',
+        gridOptions.rowModelType === 'serverSide' ? ['ServerSideRowModel', 'ServerSidePagination'] : 'RowSelection',
     rowStyle: 'RowStyle',
-    serverSideDatasource: 'ServerSideRowModel',
+    serverSideDatasource: ['ServerSideRowModel', 'ServerSidePagination'],
     sideBar: 'SideBar',
     statusBar: 'StatusBar',
     treeData: (_options, gridOptions) =>

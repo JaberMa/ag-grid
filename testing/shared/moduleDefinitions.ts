@@ -36,6 +36,7 @@ export const AllGridCommunityModules: Record<`${CommunityModuleName}Module` | 'F
     NumberFilterModule: true,
     PaginationPageNumbersModule: true,
     PaginationModule: true,
+    ServerSidePaginationModule: true,
     PinnedRowModule: true,
     QuickFilterModule: true,
     RenderApiModule: true,

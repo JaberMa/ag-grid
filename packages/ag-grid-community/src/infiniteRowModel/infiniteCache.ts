@@ -20,6 +20,8 @@ export interface InfiniteCacheParams {
     lastAccessedSequence: { value: number };
     rowNodeBlockLoader?: RowNodeBlockLoader;
     dynamicRowHeight: boolean;
+    /** Flags rows without data as `stub`, so they render as loading (and failed) rows. */
+    stubLoadingRows?: boolean;
 }
 
 // this property says how many empty blocks should be in a cache, eg if scrolls down fast and creates 10
@@ -82,6 +84,17 @@ export class InfiniteCache extends BeanStub {
         }
 
         for (const block of this.getBlocksInOrder()) {
+            block.setStateWaitingToLoad();
+        }
+        this.params.rowNodeBlockLoader!.checkBlockToLoad();
+    }
+
+    /** Queues every block whose last load failed to be loaded again. */
+    public retryLoads(): void {
+        for (const block of this.getBlocksInOrder()) {
+            if (block.state !== 'failed') {
+                continue;
+            }
             block.setStateWaitingToLoad();
         }
         this.params.rowNodeBlockLoader!.checkBlockToLoad();

@@ -19,10 +19,15 @@ export class InfiniteRowModel extends BeanStub implements NamedBean, IRowModel {
 
     public readonly hierarchical: boolean = false;
 
-    private infiniteCache: InfiniteCache | null | undefined;
+    protected infiniteCache: InfiniteCache | null | undefined;
     private datasource: IDatasource | null | undefined;
     private rowHeight: number;
     private cacheParams: InfiniteCacheParams;
+
+    /** The grid option holding this row model's datasource. */
+    protected readonly datasourceOption: 'datasource' | 'serverSideDatasource' = 'datasource';
+    /** Whether rows still loading are `stub` rows, rendered by the loading cell renderers. */
+    protected readonly stubLoadingRows: boolean = false;
 
     public getRowBounds(index: number): RowBounds {
         return {
@@ -37,7 +42,7 @@ export class InfiniteRowModel extends BeanStub implements NamedBean, IRowModel {
     }
 
     public postConstruct(): void {
-        if (this.gos.get('rowModelType') !== 'infinite') {
+        if (this.gos.get('rowModelType') !== this.getType()) {
             return;
         }
 
@@ -55,7 +60,16 @@ export class InfiniteRowModel extends BeanStub implements NamedBean, IRowModel {
     }
 
     public start(): void {
-        this.setDatasource(this.gos.get('datasource'));
+        this.setDatasource(this.getDatasourceOption());
+    }
+
+    /** Reads the datasource from the grid options, adapted to the infinite cache's `IDatasource` contract. */
+    protected getDatasourceOption(): IDatasource | undefined {
+        return this.gos.get('datasource');
+    }
+
+    protected getInitialRowCount(): number {
+        return this.gos.get('infiniteInitialRowCount');
     }
 
     public override destroy(): void {
@@ -81,7 +95,7 @@ export class InfiniteRowModel extends BeanStub implements NamedBean, IRowModel {
         });
         _addRowHeightChangedListener(this, () => this.refreshRowHeight());
 
-        this.addManagedPropertyListener('datasource', () => this.setDatasource(this.gos.get('datasource')));
+        this.addManagedPropertyListener(this.datasourceOption, () => this.setDatasource(this.getDatasourceOption()));
         this.addManagedPropertyListener('cacheBlockSize', () => this.resetCache());
         this.addManagedPropertyListener('rowHeight', () => this.refreshRowHeight());
     }
@@ -203,7 +217,7 @@ export class InfiniteRowModel extends BeanStub implements NamedBean, IRowModel {
             // properties - this way we take a snapshot of them, so if user changes any, they will be
             // used next time we create a new cache, which is generally after a filter or sort change,
             // or a new datasource is set
-            initialRowCount: gos.get('infiniteInitialRowCount'),
+            initialRowCount: this.getInitialRowCount(),
             maxBlocksInCache: gos.get('maxBlocksInCache'),
             rowHeight: _getRowHeightAsNumber(beans),
 
@@ -218,6 +232,8 @@ export class InfiniteRowModel extends BeanStub implements NamedBean, IRowModel {
             // the cache could create this, however it is also used by the pages, so handy to create it
             // here as the settings are also passed to the pages
             lastAccessedSequence: { value: 0 },
+
+            stubLoadingRows: this.stubLoadingRows,
         } as InfiniteCacheParams;
 
         this.infiniteCache = this.createBean(new InfiniteCache(this.cacheParams));

@@ -259,33 +259,34 @@ export class GridCoreCreator {
         gridId: string
     ): SingletonBean[] | undefined {
         // assert that the relevant module has been loaded
-        const rowModelModuleNames: Record<RowModelType, CommunityModuleName | EnterpriseModuleName> = {
-            clientSide: 'ClientSideRowModel',
-            infinite: 'InfiniteRowModel',
-            serverSide: 'ServerSideRowModel',
-            viewport: 'ViewportRowModel',
+        // any one of the listed modules provides the row model
+        const rowModelModuleNames: Record<RowModelType, (CommunityModuleName | EnterpriseModuleName)[]> = {
+            clientSide: ['ClientSideRowModel'],
+            infinite: ['InfiniteRowModel'],
+            serverSide: ['ServerSideRowModel', 'ServerSidePagination'],
+            viewport: ['ViewportRowModel'],
         };
         const rowModelType = getDefaultRowModelType(userProvidedRowModelType);
-        const rowModuleModelName = rowModelModuleNames[rowModelType];
+        const rowModuleModelNames = rowModelModuleNames[rowModelType];
 
-        if (!rowModuleModelName) {
+        if (!rowModuleModelNames) {
             // can't use validation service here as hasn't been created yet
             _logPreInitErr(201, { rowModelType }, `Unknown rowModelType ${rowModelType}.`);
             return;
         }
 
-        if (!_isModuleRegistered(rowModuleModelName, gridId, rowModelType)) {
+        if (!rowModuleModelNames.some((moduleName) => _isModuleRegistered(moduleName, gridId, rowModelType))) {
             const isUmd = _isUmd();
             const reasonOrId = `rowModelType = '${rowModelType}'`;
 
             const message = isUmd
                 ? `Unable to use ${reasonOrId} as that requires the ag-grid-enterprise script to be included.\n`
-                : `Missing module ${rowModuleModelName}Module for rowModelType ${rowModelType}.`;
+                : `Missing module ${rowModuleModelNames.map((name) => `${name}Module`).join(' or ')} for rowModelType ${rowModelType}.`;
             _logPreInitErr(
                 200,
                 {
                     reasonOrId,
-                    moduleName: rowModuleModelName,
+                    moduleName: rowModuleModelNames.length === 1 ? rowModuleModelNames[0] : rowModuleModelNames,
                     gridScoped: _areModulesGridScoped(),
                     gridId,
                     rowModelType,

@@ -6,7 +6,8 @@ import { _getInfiniteRowModel, _getServerSideRowModel } from './rowModelApiUtils
 export function setRowCount(beans: BeanCollection, rowCount: number, maxRowFound?: boolean): void {
     const serverSideRowModel = _getServerSideRowModel(beans);
     if (serverSideRowModel) {
-        if (beans.rowGroupColsSvc?.columns.length === 0) {
+        // without the row grouping module there are no row group columns
+        if (!beans.rowGroupColsSvc?.columns.length) {
             if (rowCount < 0) {
                 beans.log.error(238);
                 return;

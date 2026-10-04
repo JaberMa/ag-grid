@@ -1176,6 +1176,7 @@ export { RenderApiModule } from './rendering/renderModule';
 export { RowAutoHeightModule } from './rendering/row/rowAutoHeightModule';
 export { CellSpanModule } from './rendering/spanning/cellSpanModule';
 export { RowSelectionModule } from './selection/rowSelectionModule';
+export { ServerSidePaginationModule } from './serverSidePagination/serverSidePaginationModule';
 export { CellStyleModule, RowStyleModule } from './styling/stylingModule';
 export { TooltipModule } from './tooltip/tooltipModule';
 export { enableDevValidations, ValidationModule } from './validation/validationModule';
