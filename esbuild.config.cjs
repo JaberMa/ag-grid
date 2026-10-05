@@ -12,7 +12,8 @@ const cssPlugin = {
     setup(build) {
         build.onLoad({ filter: /\.css$/ }, async (args) => {
             const rawCSS = await fs.readFile(args.path, 'utf8');
-            const isLegacyCSS = !args.path.includes('/src/');
+            // esbuild reports native paths, so accept either separator (Windows uses `\`)
+            const isLegacyCSS = !/[\\/]src[\\/]/.test(args.path);
 
             // Legacy theme CSS is already processed through Sass, only source
             // CSS (Theming API) needs PostCSS.
